@@ -10,6 +10,9 @@
 #include "cgnslib.h"
 #include "utilities.hpp"
 
+#define Inner 0
+#define Boco 1
+
 namespace HSF
 {
 
@@ -22,11 +25,11 @@ public:
 	char*  name; ///< section name
 
 	ElementType_t  type; ///< element type of the section
-
+	
 	label  iStart; ///< global start index of the section
-
+	
 	label  iEnd; ///< global end index of the section
-
+	
 	label  num; ///< count of elements of the section
 
 	label  nBnd;
@@ -73,11 +76,22 @@ public:
 	* @return whether the section belongs to the entity
 	*/
 	static bool compareEleType(const label secType, const label meshType_);
+
+	/**
+	* @brief translate the element type to string
+	*/
+	static char* typeToWord(ElementType_t eleType);
+
+	/**
+	* @brief get the type of element based on node count
+	*/
+	static label getFaceType(int nodeNum);
 };
 
-struct BCSection
+class BCSection
 {
-	char name[40]; ///< section name
+public:
+	char name[CHAR_DIM]; ///< section name
 
 	BCType_t type; ///< boundary condition type
 
@@ -88,6 +102,16 @@ struct BCSection
 	PointSetType_t ptsetType[1]; ///< the type of set of boundary elements
 
 	cgsize_t* BCElems; ///< list or range of boundary elements
+
+	/**
+	* @brief translate the boundary condition type to string
+	*/
+	static char* typeToWord(BCType_t BCType);
+
+	/**
+	* @brief find the BC type of specific element
+	*/
+	bool findBCType(label eleID);
 };
 
 } // end namespace HSF

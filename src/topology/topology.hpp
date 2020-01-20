@@ -4,7 +4,7 @@
 * @brief:
 * @date:   2019-09-09 15:08:19
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-27 11:32:09
+* @last Modified time: 2020-01-06 16:36:38
 */
 #ifndef TOPOLOGY_HPP
 #define TOPOLOGY_HPP
@@ -22,51 +22,51 @@ namespace HSF
 class Topology
 {
 private:
-
+	
 	label nodeNum_; ///< count of nodes;
-
+	
 	label cellNum_; ///< count of cells;
-
+	
 	label edgeNum_; ///< count of edges;
-
+	
 	label faceNum_; ///< count of faces;
-
+	
 	label faceNum_b_; ///< count of boundary faces;
-
+	
 	label faceNum_i_; ///< count of internal faces;
-
+	
 	label cellStartId_; ///< global start index of elements of this processor
-
+	
 	ArrayArray<label> node2Node_; ///< Connectivity between nodes and nodes
-
+	
 	ArrayArray<label> node2Edge_; ///< Connectivity between nodes and edges
-
+	
 	ArrayArray<label> edge2Node_; ///< Connectivity between edges and nodes (finish)
-
+	
 	ArrayArray<label> edge2Cell_; ///< Connectivity between edges and cells (finish)
-
+	
 	ArrayArray<label> face2Node_; ///< Connectivity between faces and nodes (finish)
-
+	
 	Array<Array<label> > face2NodeBnd_; ///< Connectivity between faces and nodes at the boundary (finish)
-
+	
 	ArrayArray<label> face2Cell_; ///< Connectivity between faces and cells (finish)
-
+	
 	Array<Array<label> > face2CellPatch_; ///< Connectivity between faces and cells at the process boundary (finish)
-
+	
 	Array<Array<label> > face2CellBnd_; ///< Connectivity between faces and cells at the boundary (finish)
-
+	
 	ArrayArray<label> face2Edge_; ///< Connectivity between faces and edges
-
+	
 	ArrayArray<label> cell2Cell_; ///< Connectivity between cells and cells (finish)
-
+	
 	ArrayArray<label> cell2Node_; ///< Connectivity between cells and nodes (finish)
-
+	
 	ArrayArray<label> cell2Face_; ///< Connectivity between cells and faces (finish)
-
+	
 	ArrayArray<label> cell2Edge_; ///< Connectivity between cells and edges (finish)
-
+	
 	Array<label> cellType_; ///< type of cells
-
+	
 	Array<label> faceType_; ///< type of faces
 	// /// reorder the face2Node topology to seperate the boundary faces and internal faces
 	// label reorderFace2Node(Array<Array<label> >& face2NodeTmp,
@@ -136,7 +136,7 @@ public:
 	{
 		this->cell2Node_ = cell2Node;
 		this->cellNum_ = cell2Node.size();
-		// printf("%d\n", cell2Node_.num);
+		// printf("%d, %d\n", cell2Node_.num, cell2Node.size());
 	};
 
 	/**

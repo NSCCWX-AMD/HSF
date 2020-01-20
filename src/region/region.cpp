@@ -4,7 +4,7 @@
 * @brief:
 * @date:   2019-10-14 09:17:17
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-28 13:58:29
+* @last Modified time: 2020-01-09 17:17:46
 */
 #include <algorithm>
 #include "region.hpp"
@@ -30,10 +30,11 @@ bool compare(pair<label, pair<label, label> > a, pair<label, pair<label, label> 
 }
 
 
-void Region::initBeforeBalance(char* meshFile)
+void Region::initBeforeBalance(Array<char*> meshFile)
 {
-	strncpy(meshFile_, meshFile, sizeof(meshFile_));
+	// strncpy(meshFile_, meshFile, sizeof(meshFile_));
 	// this->meshFile_[sizeof(meshFile)-1]='/0';
+    meshFile_.assign(meshFile.begin(), meshFile.end());
 	par_std_out_("start reading mesh ...\n");
 	this->getMesh().readMesh(meshFile);
 	par_std_out_("finish reading mesh ...\n");
@@ -44,6 +45,7 @@ void Region::initAfterBalance()
 {
 	par_std_out_("start constructing topology ...\n");
 	this->getMesh().fetchNodes(this->meshFile_);
+    // this->getMesh().fetchNodes(this->meshFile_[1]);
 	this->getMesh().getTopology().constructTopology();
 	par_std_out_("finish constructing topology ...\n");
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -59,6 +61,7 @@ void Region::initAfterBalance()
 
 	par_std_out_("start reading boundary mesh ...\n");
 	this->getBoundary().readMesh(this->meshFile_);
+    this->getBoundary().readBC(this->meshFile_);
 	par_std_out_("finish reading boundary mesh ...\n");
 	Topology innerTopo = this->getMesh().getTopology();
 	par_std_out_("start constructing boundary topology ...\n");
@@ -68,12 +71,25 @@ void Region::initAfterBalance()
     par_std_out_("start initialize mesh information ...\n");
     this->meshInfo_.init(mesh_);
     par_std_out_("finish initialize mesh information ...\n");
+
+    par_std_out_("start generate block topology ...\n");
+    this->getMesh().generateBlockTopo();
+    // this->getBoundary().generateBlockTopo();
+    par_std_out_("finish generate block topology ...\n");
+
 }
 
 void Region::writeMesh(char* meshFile)
 {
+    par_std_out_("start write inner mesh ...\n");
 	this->getMesh().writeMesh(meshFile);
+    par_std_out_("finish write inner mesh ...\n");
+    par_std_out_("start write boundary mesh ...\n");
 	this->getBoundary().writeMesh(meshFile);
+    par_std_out_("finish write boundary mesh ...\n");
+    par_std_out_("start write boundary condition ...\n");
+    this->getBoundary().writeBC(meshFile);
+    par_std_out_("finish write boundary condition ...\n");
 }
 
 /// guhf

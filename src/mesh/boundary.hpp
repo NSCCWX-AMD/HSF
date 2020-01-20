@@ -4,7 +4,7 @@
 * @brief:
 * @date:   2019-09-26 09:25:10
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-27 15:32:54
+* @last Modified time: 2020-01-10 14:59:05
 */
 #ifndef BOUNDARY_HPP
 #define BOUNDARY_HPP
@@ -25,10 +25,13 @@ private:
 
 	Array<BCSection> BCSecs_; ///< Boundary condition section information for CGNS file
 
+	Array<label> BCType_;
+
 	void readBoundaryCondition(const char* filePtr); ///< read mesh file with CGNS format
 
 	void writeBoundaryCondition(const char* filePtr); ///< write mesh file with CGNS format
 
+	void initBoundaryConditionType();
 public:
 	/**
 	* @brief default constructor
@@ -51,6 +54,30 @@ public:
 	* @param[in] filePtr CGNS file name
 	*/
 	void writeMesh(const char* filePtr);
+	/**
+	* @brief generate the block topology
+	*/
+	void generateBlockTopo();
+	/**
+	* @brief read boundary condition
+	*/
+	void readBC(const Array<char*> filePtr)
+	{
+		for (int i = 0; i < filePtr.size(); ++i)
+		{
+			readBoundaryCondition(filePtr[i]);
+		}
+		initBoundaryConditionType();
+	};
+
+	/**
+	* @brief write boundary condition
+	*/
+	void writeBC(const char* filePtr)
+	{
+		writeBoundaryCondition(filePtr);
+		par_std_out_("writeBC\n");
+	}
 };
 
 // struct BCSection

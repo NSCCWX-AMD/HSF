@@ -27,8 +27,8 @@ THE SOFTWARE.
 * @author: Hanfeng
 * @Email:
 * @Date:   2019-11-9 10:53:54
-* @Last Modified by:   Hanfeng
-* @Last Modified time: 2019-11-30 15:19:46
+* @Last Modified by:   Hanfeng GU
+* @Last Modified time: 2019-11-15 09:55:06
 */
 
 
@@ -37,8 +37,9 @@ THE SOFTWARE.
 
 #include "base.hpp"
 
-namespace HSF
-{
+using namespace HSF;
+// namespace HSF
+// {
 
 #ifdef __cplusplus
 extern "C" {
@@ -73,7 +74,7 @@ void get_scalar_field_(const char* setType, const char* fieldName,
 * @param[in]  setType label类型流场变量类型名
 * @param[in]  fieldName label类型流场变量名
 * @param[in]  fPtr 流场变量首地址
-* @param[in]  ndim 流场变量结构体内变量数量
+* @param[in] ndim 流场变量结构体内变量数量
 * @param[in]  n 流场变量结构体数量
 */
 void add_label_field_(const char* setType, const char* fieldName,
@@ -142,6 +143,6 @@ void get_scalar_field_neighbor_addressing_(const char* setType, const char* fiel
 }
 #endif
 
-} //- end namespace HSF
+// } //- end namespace HSF
 
 #endif //- end fortranInterfaces_hpp

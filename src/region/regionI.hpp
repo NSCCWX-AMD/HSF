@@ -34,7 +34,8 @@ THE SOFTWARE.
 /*
 * @brief: Implementation of template functions in Region class
 */
-
+// #ifndef REGIONI_HPP
+// #define REGIONI_HPP
 
 template<typename T>
 Field<T>& Region::getField(const Word fieldType, const Word fieldName)
@@ -208,7 +209,7 @@ void Region::writeField(const char* resFile,
 
     int iFile, nBases, cellDim, physDim, Cx, Cy, Cz;
     int iBase=1, iZone=1;
-    char basename[20];
+    char basename[CHAR_DIM];
 
     if(cgp_mpi_comm(MPI_COMM_WORLD) != CG_OK)
         Terminate("initCGNSMPI", cg_get_error());
@@ -258,7 +259,7 @@ void Region::writeField(const char* resFile,
     for (int i = 1; i <= nSols; ++i)
     {
         GridLocation_t solLoc;
-        char solNameTmp[20];
+        char solNameTmp[CHAR_DIM];
         cg_sol_info(iFile, iBase, iZone, i, solNameTmp, &solLoc);
         if(solLoc==location) S=i;
     }

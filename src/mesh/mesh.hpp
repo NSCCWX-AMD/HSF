@@ -38,7 +38,21 @@ private:
 
 	Array<label> nodeNumLocal_; ///< end index of nodes reading from CGNS file
 
-	Array<label> nodeNumGlobal_; ///< end index of nodes reading from CGNS file
+	Array<label> nodeNumGlobal_; ///< the count of overall nodes of CGNS file
+
+	Array<label> eleNumGlobal_; ///< the count of overall elements of CGNS file
+
+	/// map from real nodes in zone to nodes in CGNS
+	// Array<Array<label64> > node_local_2_global_; 
+
+	// map from nodes in CGNS to real nodes in zone
+	// Array<Array<label64> > node_global_2_local_;
+
+	Array<char*> zoneName_; ///< zone name in CGNS file
+
+	/// map between the nodes at the interfaces of zones
+	std::map<label64, label64> zc_node_map_; 
+
 	
 	Nodes *ownNodes_; ///< Coordinates of nodes owned by this process
 	
@@ -55,6 +69,39 @@ private:
 	* @brief read mesh file with CGNS format
 	*/
 	void readCGNSFile(const char* filePtr);
+	/**
+	* @brief read only one zone of CGNS file
+	*/
+	void readOneZone(const int iFile, const int iBase, const int iZone);
+	/**
+	* @brief read zone connectivity
+	* @param[in] filePtr CGNS file
+	* @param[out] zc_pnts the nodes of own zone at the interfaces
+	* @param[out] zc_donor_pnts the nodes of neighbor zone at the interfaces
+	* @param[out] zc_name the name of neighbor zone at the interfaces
+	* @param[out] nodes the points of the nodes at the interfaces
+	*/
+	void readZoneConnectivity(const char* filePtr,
+	    Array<Array<Array<label64> > >& zc_pnts,
+	    Array<Array<Array<label64> > >& zc_donor_pnts,
+	    Array<Array<char*> >& zc_name,
+	    Array<Array<Array<Array<label64> > > >& nodes);
+
+	/**
+	* @brief merge the interfaces nodes, save the nodes of prior zone
+	*/
+	void mergeInterfaceNodes(Array<Array<Array<label64> > >& zc_pnts,
+	    Array<Array<Array<label64> > >& zc_donor_pnts,
+    	Array<Array<char*> >& zc_name,
+    	Array<Array<Array<Array<label64> > > >& nodes);
+
+	/**
+	* @brief find the points of the corresponding node.
+	*/
+	vector<label64>& findNeighborNodes(Array<Array<Array<label64> > >& zc_pnts,
+    	int iZone, label64 owner_pnt, Array<Array<Array<Array<label64> > > >& nodes);
+
+	void removeInterfaceNodes(Array<Array<Array<label64> > >& zc_pnts);
 	/**
 	* @brief read mesh file with CGNS format, parallel version
 	*/
@@ -142,6 +189,17 @@ public:
 	Array<Section>& getSections() {return this->secs_; };
 
 	/**
+	* @brief erase some sections in CGNS file
+	*/
+	void eraseSections(Array<bool>& erase)
+	{
+    	for (int i = 0; i < this->secs_.size(); ++i)
+	    {
+    	    if(erase[i]) this->secs_.erase(this->secs_.begin()+i);
+    	}
+	};
+
+	/**
 	* @brief set the load balance result to topology
 	* @param[in] cell2Node the topology between elements and nodes
 	* @param[in] cellType the elements type
@@ -160,7 +218,8 @@ public:
 	/**
 	* @brief fetch the coordinates of nodes owned by this process
 	*/
-	void fetchNodes(Array<char*> fileArr);
+	// void fetchNodes(Array<char*> fileArr);
+	void fetchNodes(char* filename);
 
 	/**
 	* @brief get the map between the absolute index and the local index
@@ -171,7 +230,10 @@ public:
 	* @brief generate the block topology
 	*/
 	void generateBlockTopo() {blockTopo_.constructBlockTopology(topo_);};
-	
+
+	Array<label64>& getEleNumGlobal(){return this->eleNumGlobal_;};
+
+
 };
 
 } // end namespace HSF

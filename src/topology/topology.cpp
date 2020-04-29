@@ -116,15 +116,16 @@ void Topology::constructTopology()
 			if(faces2NodesTmp[i].size()!=faces2NodesTmp[end].size())
 			{
 				isEqual = false;
-				break;
-			}
-			// 比较各个维度，不相等则跳出，标记不相等
-			for (int j = 0; j < faces2NodesTmp[i].size()-1; ++j)
+			} else
 			{
-				if(faces2NodesTmp[i][j]!=faces2NodesTmp[end][j])
+				// 比较各个维度，不相等则跳出，标记不相等
+				for (int j = 0; j < faces2NodesTmp[i].size()-1; ++j)
 				{
-					isEqual = false;
-					break;
+					if(faces2NodesTmp[i][j]!=faces2NodesTmp[end][j])
+					{
+						isEqual = false;
+						break;
+					}
 				}
 			}
 			if(isEqual)
@@ -165,6 +166,7 @@ void Topology::constructTopology()
 		}
 	}
 
+	this->faceNum_i_ = face2NodeInn.size();
 	// par_std_out_("start setting patch infomation ...\n");
 	setPatchInfo(face2NodeInn, face2NodeBnd, face2CellInn, face2CellBnd);
 	// par_std_out_("finish setting patch infomation ...\n");
@@ -223,10 +225,9 @@ void Topology::constructTopology()
 		face2NodeInn.insert(face2NodeInn.end(), face2NodeWithType[i].begin(), face2NodeWithType[i].end());
 		face2CellInn.insert(face2CellInn.end(), face2CellWithType[i].begin(), face2CellWithType[i].end());
 	}
-	transformArray(face2CellInn, this->face2Cell_);
-	this->faceNum_i_ = face2NodeInn.size();
-	this->faceNum_b_ = face2NodeBnd.size();
-	this->faceNum_   = this->faceNum_i_+this->faceNum_b_;
+
+	this->faceNum_ = face2NodeInn.size();
+	// this->faceNum_   = this->faceNum_i_+this->faceNum_b_;
 
 	// 将重排后的face2node拓扑关系复位，原始顺序从cell2node中获取
 	for (int i = 0; i < face2NodeInn.size(); ++i)
@@ -247,6 +248,7 @@ void Topology::constructTopology()
 				face2NodeInn[i].swap(tmp);
 		}
 	}
+	transformArray(face2CellInn, this->face2Cell_);
 	transformArray(face2NodeInn, this->face2Node_);
 	// if(rank==0)
 	// {
@@ -267,6 +269,8 @@ void Topology::constructTopology()
 	{
 		for (int j = 0; j < face2CellInn[i].size(); ++j)
 		{
+			if(face2CellInn[i][j]<0)
+				Terminate("constructTopology","face2CellInn < 0");
 			cell2FaceArr[face2CellInn[i][j]].push_back(i);
 		}
 	}
@@ -293,15 +297,15 @@ void Topology::constructTopology()
 	transformArray(cell2CellArr, this->cell2Cell_);
 	this->face2NodeBnd_.swap(face2NodeBnd);
 
-	this->genEdgeTopo();
+	// this->genEdgeTopo();
 
 	DELETE_POINTER(cellStartIdTmp);
 	DELETE_POINTER(isInner);
 }
 
-void Topology::setPatchInfo(Array<Array<label> > face2NodeInn,
-	Array<Array<label> > face2NodeBnd, Array<Array<label> > face2CellInn,
-	Array<Array<label> > face2CellBnd)
+void Topology::setPatchInfo(Array<Array<label> >& face2NodeInn,
+	Array<Array<label> >& face2NodeBnd, Array<Array<label> >& face2CellInn,
+	Array<Array<label> >& face2CellBnd)
 {
 	int rank;
 	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -335,17 +339,19 @@ void Topology::setPatchInfo(Array<Array<label> > face2NodeInn,
 	face2CellNew = LoadBalancer::collectNeighborCell(face2NodeBndTmp,
 		face2NodeBnd, face2CellTmp);
 
+	Array<label> cellType_ = this->getCellType();
 	for (int i = 0; i < face2CellNew.size(); ++i)
 	{
 		if(face2CellNew[i]>=0)
 		{
 			Array<label> face2CellPatchTmp;
 			face2CellPatchTmp.push_back(face2CellArr[i][0]);
+			// par_std_out_("iface: %d, cell: %d,cell: %d\n", i, face2CellArr[i][0], face2CellNew[i]);
 			face2CellPatchTmp.push_back(face2CellNew[i]);
 			face2CellPatch_.push_back(face2CellPatchTmp);
+			face2NodePatch_.push_back(face2NodeBnd[i]);
 		}
 	}
-	// printf("rank %d, patch: %d\n", rank, face2CellPatch_.size());
 	// if(rank==1)
 	// {
 	// 	for (int i = 0; i < face2CellPatch_.size(); ++i)
@@ -707,6 +713,28 @@ void Topology::genEdgeTopo()
 	// 	}
 	// 	printf("\n");
 	// }
+}
+
+label Topology::getSize(const Word setType)
+{
+  if(setType == "cell")
+  {
+    return cellNum_;
+  }
+  else if(setType == "face")
+  {
+    return faceNum_;
+  }
+  else if(setType == "node")
+  {
+    return nodeNum_;
+  }
+  else
+  {
+    par_std_out_("Error: Invalid setType: %s, valid names are \n", setType.c_str());
+    ERROR_EXIT;
+    return 0;
+  }
 }
 
 } // end namespace HSF

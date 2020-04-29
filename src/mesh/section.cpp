@@ -44,6 +44,7 @@ label Section::nodesNumForEle(const label eleType)
 		case HEXA_8: return 8;
 		case HEXA_27: return 27;
 		default:
+			printf("%d\n", eleType);
 			Terminate("find nodes count for Elements", "element type is not supported");
 	}
 }
@@ -421,6 +422,38 @@ char* Section::typeToWord(ElementType_t eleType)
     }
 }
 
+char* Section::GridLocationToWord(GridLocation_t location)
+{
+	switch(location)
+	{
+		case Vertex: return "Vertex";
+		case CellCenter: return "CellCenter";
+		case FaceCenter: return "FaceCenter";
+		default: Terminate("transform grid location to string", "unknown type");
+	}
+}
+
+char* Section::PtSetToWord(PointSetType_t ptsetType)
+{
+	switch(ptsetType)
+	{
+		case PointRange: return "PointRange";
+		case PointList: return "PointList";
+		default: Terminate("transform point set to string", "unknown type");
+	}
+}
+
+char* Section::ConnTypeToWord(GridConnectivityType_t connType)
+{
+	switch(connType)
+	{
+		case Overset: return "Overset";
+		case Abutting: return "Abutting";
+		case Abutting1to1: return "Abutting1to1";
+		default: Terminate("transform GridConnectivityType_t to string", "unknown type");
+	}
+}
+
 char* BCSection::typeToWord(BCType_t BCType)
 {
     switch(BCType)
@@ -439,19 +472,23 @@ char* BCSection::typeToWord(BCType_t BCType)
     }
 }
 
+
 bool BCSection::findBCType(label eleID)
 {
 	if(ptsetType[0]==PointRange)
 	{
 		// printf("%d, %d, %d\n", eleID, );
-		if(eleID<=BCElems[1] && eleID>=BCElems[0]) return true;
+		if(eleID<=BCElems[1]+zoneStart && eleID>=BCElems[0]+zoneStart) return true;
 		else return false;
-	} else if(ptsetType[1]==PointList)
+	} else if(ptsetType[0]==PointList)
 	{
+// printf("%d\n", nBCElems);
 		for (int i = 0; i < nBCElems; ++i)
 		{
-			if(eleID==BCElems[i]) return true;
+// printf("%d,%d\n", eleID,BCElems[i]);
+			if(eleID==BCElems[i]+zoneStart) return true;
 		}
+// printf("%d\n", eleID);
 		return false;
 	} else
 	{

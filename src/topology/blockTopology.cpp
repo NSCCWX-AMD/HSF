@@ -28,6 +28,24 @@ void BlockTopology::constructBlockTopology(Topology& topo)
 	// printf("constructBlockTopology\n");
 	Array<label> cellMap = this->reorderCellTopo(topo);
 	Array<label> faceMap = this->reorderFaceTopo(topo);
+	for (int i = 0; i < this->face2Cell_.size(); ++i)
+	{
+		for (int j = this->face2Cell_.startIdx[i];
+			j < this->face2Cell_.startIdx[i+1]; ++j)
+		{
+			// ghost单元不进行映射
+			if(this->face2Cell_.data[j] < cellMap.size())
+				this->face2Cell_.data[j] = cellMap[this->face2Cell_.data[j]];
+		}
+	}
+	for (int i = 0; i < this->cell2Face_.size(); ++i)
+	{
+		for (int j = this->cell2Face_.startIdx[i];
+			j < this->cell2Face_.startIdx[i+1]; ++j)
+		{
+			this->cell2Face_.data[j] = faceMap[this->cell2Face_.data[j]];
+		}
+	}	
 }
 
 Array<label> BlockTopology::reorderFaceTopo(Topology& topo)
@@ -37,8 +55,10 @@ Array<label> BlockTopology::reorderFaceTopo(Topology& topo)
 	MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
 	const ArrayArray<label> face2Node = topo.getFace2Node();
+	label n_face_i = topo.getInnFacesNum();
+	par_std_out_("face2Node_ size: %d",face2Node.size());
 	Array<label> faceType;
-	for (int i = 0; i < face2Node.size(); ++i)
+	for (int i = 0; i < n_face_i; ++i)
 	{
 		int nodeNum = face2Node.startIdx[i+1]-face2Node.startIdx[i];
 		faceType.push_back(Section::getFaceType(nodeNum));
@@ -151,6 +171,11 @@ Array<label> BlockTopology::reorderFaceTopo(Topology& topo)
 			face2NodeBlk[blockIdx].push_back(tmp);
 		}
 	}
+	// 边界面单独赋值
+	for (int i = faceType.size(); i < face2Node.size(); ++i)
+	{
+		faceMap.push_back(i);
+	}
 
 	// 将不同类型网格合并到一起
 	Array<Array<label> > face2NodeBlkNew;
@@ -167,7 +192,7 @@ Array<label> BlockTopology::reorderFaceTopo(Topology& topo)
 
 	// face2Cell
 	const ArrayArray<label> face2Cell = topo.getFace2Cell();
-
+	
 	reorderOtherTopo(faceMap, face2Cell, this->face2Cell_);
 
 	return faceMap;
@@ -315,6 +340,7 @@ Array<label> BlockTopology::reorderCellTopo(Topology& topo)
 	transformArray(cell2CellBlkNew, this->cell2Cell_);
 
 	this->cellBlockStartIdx_.assign(cellNumInBlk.begin(), cellNumInBlk.end());
+// printf("%d,%d,%d,%d\n", rank,cellBlockStartIdx_[0],cellBlockStartIdx_[1],cellBlockStartIdx_[2]);
 
 	// cell2node
 	const ArrayArray<label> cell2Node = topo.getCell2Node();

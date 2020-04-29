@@ -7,6 +7,7 @@
 * @last Modified time: 2020-01-10 14:59:02
 */
 #include "mpi.h"
+#include <assert.h>
 #include "boundary.hpp"
 // #include "loadBalancer.hpp"
 #include "pcgnslib.h"
@@ -28,77 +29,91 @@ void Boundary::readBoundaryCondition(const char* filePtr)
 
     // if(cg_goto(iFile, iBase, "Zone", 1, "ZoneBC_t", 1, "BC_t", 1, "end"))
     	// Terminate("goZoneBC", cg_get_error());
-
+    int nZones;
+    if(cg_nzones(iFile, iBase, &nZones))
+        Terminate("readZoneInfo", cg_get_error());
     // read boundary condition
-    int nBocos;
-    if(cg_nbocos(iFile, iBase, iZone, &nBocos))
-        Terminate("readNBocos", cg_get_error());
-
-    char bocoName[CHAR_DIM];
-    int normalIndex[3];
-    PointSetType_t ptsetType[1];
-    cgsize_t normalListSize;
-    int nDataSet;
-    DataType_t normDataType;
-    for(int iBoco=1; iBoco<=nBocos; iBoco++)
+    for (int iZone = 1; iZone <= nZones; ++iZone)
     {
-        BCSection BCSec;
-        /* Read the info for this boundary condition. */
-        if(cg_boco_info(iFile, iBase, iZone, iBoco, BCSec.name, &BCSec.type,
-            BCSec.ptsetType, &BCSec.nBCElems, &normalIndex[0], &normalListSize, &normDataType,
-            &nDataSet))
-            Terminate("readBocoInfo", cg_get_error());
-        if(BCSec.ptsetType[0]!=PointRange || BCSec.ptsetType[0]!=PointList)
+        int nBocos;
+        if(cg_nbocos(iFile, iBase, iZone, &nBocos))
+            Terminate("readNBocos", cg_get_error());
+    
+        char bocoName[CHAR_DIM];
+        int normalIndex[3];
+        PointSetType_t ptsetType[1];
+        cgsize_t normalListSize;
+        int nDataSet;
+        DataType_t normDataType;
+// p    rintf("BC num: %d\n", nBocos);
+        for(int iBoco=1; iBoco<=nBocos; iBoco++)
         {
-            if(BCSec.ptsetType[0]==ElementRange) BCSec.ptsetType[0] = PointRange;
-            else if(BCSec.ptsetType[0]==ElementList) BCSec.ptsetType[0] = PointList;
+            BCSection BCSec;
+            /* Read the info for this boundary condition. */
+            if(cg_boco_info(iFile, iBase, iZone, iBoco, BCSec.name, &BCSec.type,
+                BCSec.ptsetType, &BCSec.nBCElems, &normalIndex[0], &normalListSize, &normDataType,
+                &nDataSet))
+                Terminate("readBocoInfo", cg_get_error());
             if(cg_boco_gridlocation_read(iFile, iBase, iZone, iBoco, &BCSec.location))
                 Terminate("readGridLocation", cg_get_error());
-            if(BCSec.location==CellCenter)
+            if(BCSec.ptsetType[0]!=PointRange && BCSec.ptsetType[0]!=PointList)
             {
-                par_std_out_("The boundary condition is defined on CellCenter\n");
+                if(BCSec.ptsetType[0]==ElementRange) BCSec.ptsetType[0] = PointRange;
+                else if(BCSec.ptsetType[0]==ElementList) BCSec.ptsetType[0] = PointList;
+                else
+                {
+                // printf("%d,%d,%d,%d,%d\n", BCSec.ptsetType[0],PointList,PointRange,ElementRange,ElementList); 
+                    Terminate("readPointsetType", "The point set type is unknown");
+                }
+                if(BCSec.location==CellCenter)
+                {
+                    par_std_out_("The boundary condition is defined on CellCenter\n");
+                }
+                else if(BCSec.location==EdgeCenter)
+                {
+                    Terminate("readGridLocation","The boundary condition is defined on EdgeCenter\n");
+                }
+                else if(BCSec.location==Vertex)
+                {
+                    BCSec.location = CellCenter;
+                    par_std_out_("The boundary condition is defined on Vertex\n");
+                }
+                else if(BCSec.location==FaceCenter)
+                {
+                    BCSec.location = FaceCenter;
+                    par_std_out_("The boundary condition is defined on FaceCenter\n");
+                }
+                else
+                {
+                    par_std_out_("!!!!Error!!!!vertex: %d, FaceCenter: %d, "
+                        "EdgeCenter: %d, location: %d\n", Vertex, FaceCenter,
+                        EdgeCenter, BCSec.location);
+                }
             }
-            else if(BCSec.location==EdgeCenter)
+            BCSec.BCElems = new cgsize_t[BCSec.nBCElems];
+            if(cg_boco_read(iFile, iBase, iZone, iBoco, BCSec.BCElems, NULL))
             {
-                Terminate("readGridLocation","The boundary condition is defined on EdgeCenter\n");
+                Terminate("readBocoInfo", cg_get_error());
             }
-            else if(BCSec.location==Vertex)
+            if(BCSec.ptsetType[0]==PointRange)
             {
-                BCSec.location = CellCenter;
-                par_std_out_("The boundary condition is defined on Vertex\n");
+                par_std_out_("PointRange: iBoco: %d, name: %s, type: %s, "
+                    "nEles: %d, start: %d, end: %d\n", iBoco, BCSec.name,
+                    BCSection::typeToWord(BCSec.type), BCSec.nBCElems,
+                    BCSec.BCElems[0], BCSec.BCElems[1]);
             }
-            else if(BCSec.location==FaceCenter)
+            else if(BCSec.ptsetType[0]==PointList)
             {
-                BCSec.location = FaceCenter;
-                par_std_out_("The boundary condition is defined on FaceCenter\n");
+                par_std_out_("PointList: iBoco: %d, name: %s, type: %s, "
+                    "nEles: %d\n", iBoco, BCSec.name,
+                    BCSection::typeToWord(BCSec.type), BCSec.nBCElems);
             }
-            else
-            {
-                par_std_out_("!!!!Error!!!!vertex: %d, FaceCenter: %d, "
-                    "EdgeCenter: %d, location: %d\n", Vertex, FaceCenter,
-                    EdgeCenter, BCSec.location);
-            }
+            else 
+                Terminate("readPointsetType", "The point set type is unknown");
+            BCSec.zoneStart = this->getEleNumGlobal()[iZone-1];
+            this->BCSecs_.push_back(BCSec);
         }
-        BCSec.BCElems = new cgsize_t[BCSec.nBCElems];
-        if(cg_boco_read(iFile, iBase, iZone, iBoco, BCSec.BCElems, NULL))
-        {
-            Terminate("readBocoInfo", cg_get_error());
-        }
-        if(BCSec.ptsetType[0]==PointRange)
-        {
-            par_std_out_("PointRange: iBoco: %d, name: %s, type: %s, "
-                "nEles: %d, start: %d, end: %d\n", iBoco, BCSec.name,
-                BCSection::typeToWord(BCSec.type), BCSec.nBCElems,
-                BCSec.BCElems[0], BCSec.BCElems[1]);
-        }
-        else if(BCSec.ptsetType[0]==PointList)
-        {
-            par_std_out_("PointList: iBoco: %d, name: %s, type: %s, "
-                "nEles: %d\n", iBoco, BCSec.name,
-                BCSection::typeToWord(BCSec.type), BCSec.nBCElems);
-        }
-        this->BCSecs_.push_back(BCSec);
-    }    
+    }
     if(cg_close(iFile))
         Terminate("closeCGNSFile", cg_get_error());
 }
@@ -178,6 +193,7 @@ void Boundary::writeBoundaryCondition(const char* filePtr)
 
     Array<label> pointListArr;
     Array<label> npnts;
+    // printf("nBocos: %d\n", nBocos);
     for (int iBC = 0; iBC < nBocos; ++iBC)
     {
         for (int iBlk = 0; iBlk < blockNum; ++iBlk)
@@ -262,10 +278,12 @@ void Boundary::exchangeBoundaryElements(Topology& innerTopo)
 
     ArrayArray<label> cell2Node = innerTopo.getCell2Node();
     Array<label> cellType = innerTopo.getCellType();
+    // std::map<label64, label64> nodeMap = this->zc_node_map_; 
 
     label cellStartId = innerTopo.getCellStartId();
 
     ArrayArray<label> face2NodeBnd = getTopology().getCell2Node();
+    // printf("%d\n", face2NodeBnd.size());
     Array<label> faceType = getTopology().getCellType();
     // par_std_out_("%d,%d\n", getSections().size(),this->secs_.size());
     Array<Array<label> > face2NodeBndArr;
@@ -671,21 +689,21 @@ void generateBlockTopo()
 
 void Boundary::initBoundaryConditionType()
 {
-
-    BCSecs_[0].type = BCWall;
-    BCSecs_[1].type = BCOutflow;
-    BCSecs_[2].type = BCInflow;
+    // BCSecs_[0].type = BCWall;
+    // BCSecs_[1].type = BCOutflow;
+    // BCSecs_[2].type = BCInflow;
 
     Array<Section> secs = this->getSections();
+    Array<bool> erase(secs.size(),false);
     for (int i = 0; i < secs.size(); ++i)
     {
-        printf("%d, %d\n", secs[i].iStart, secs[i].iEnd);
+        // printf("%d, %d\n", secs[i].iStart, secs[i].iEnd);
         for (int j = 0; j < secs[i].num; ++j)
         {
             bool flag;
             for (int k = 0; k < BCSecs_.size(); ++k)
             {
-                flag = BCSecs_[k].findBCType(j+secs[i].iStart);
+                flag = BCSecs_[k].findBCType(j+secs[i].iStart+this->getEleNumGlobal()[secs[i].iZone]);
                 if(flag)
                 {
                     BCType_.push_back(BCSecs_[k].type);
@@ -693,30 +711,81 @@ void Boundary::initBoundaryConditionType()
                 }
             }
             if(!flag)
-                Terminate("findElementType", "the element type can not be found");
+            {
+                // printf("%d,%d,%d\n", j,secs[i].num,j+secs[i].iStart);
+                Terminate("initBoundaryConditionType", "the boundary element need to define the boundary condition");
+                // BCType_.push_back(-1);
+                // erase[j] = true;
+            }
         }
     }
-    // for (int i = 0; i < BCType_.size(); ++i)
-    // {
-    //     printf("%d, %d\n", i, BCType_[i]);
-    // }
+    int idx = 0;
+    for (int i = 0; i < secs.size(); ++i)
+    {
+        label type = BCType_[idx];
+        for (int j = 0; j < secs[i].num; ++j)
+        {
+            if(type!=BCType_[idx++])
+                Terminate("initBoundaryConditionType","The element BC type must be same in the same section");
+        }
+    }
+    // printf("%d\n", this->getSections().size());
+    // this->eraseSections(erase);
+    // this->getTopology().constructTopology(this->getSections());
+    // printf("%d\n", this->getSections().size());
+}
+
+
+void Boundary::readFamilyBC(const char* filePtr)
+{
+    if(cgp_mpi_comm(MPI_COMM_WORLD) != CG_OK)
+        Terminate("initCGNSMPI", cg_get_error());
+    label32 iFile;
+    // open cgns file
+    if(cgp_open(filePtr, CG_MODE_READ, &iFile))
+        Terminate("readGridCGNS", cg_get_error());
+    label32 iBase = 1;
+    label32 iZone;
+
+    // if(cg_goto(iFile, iBase, "Zone", 1, "ZoneBC_t", 1, "BC_t", 1, "end"))
+        // Terminate("goZoneBC", cg_get_error());
+    int nZones;
+    if(cg_nzones(iFile, iBase, &nZones))
+        Terminate("readZoneInfo", cg_get_error());
+
+    int nfamilies;
+    if(cg_nfamilies(iFile, iBase, &nfamilies))
+        Terminate("readNFamilies", cg_get_error());
+    printf("nfamilies: %d\n", nfamilies);
+
+    for (int iFam = 1; iFam <= nfamilies; ++iFam)
+    {
+        char familyName[CHAR_DIM];
+        label32 nFamBC, nGeo;
+        if(cg_family_read(iFile, iBase, iFam, familyName, &nFamBC, &nGeo))
+            Terminate("readFamilyInfo", cg_get_error());
+        label32 nNames;
+        if(cg_nfamily_names(iFile, iBase, iFam, &nNames) ||
+            nNames>0)
+            Terminate("readNFamilyNames", cg_get_error());
+        printf("iFam: %d, familyName: %s, nFamBC: %d, nGeo: %d, nNames: %d\n", iFam, familyName, nFamBC, nGeo, nNames);
+        if(nFamBC==0) continue;
+
+        char famBCName[CHAR_DIM];
+        BCType_t type;
+        if(cg_fambc_read(iFile, iBase, iFam, 1, famBCName, &type))
+            Terminate("readFamBC", cg_get_error());
+        printf("famBCName: %s, type: %d\n", famBCName, type);
+        printf("%d\n", BCSecs_.size());
+        for (int iBCSec = 0; iBCSec < this->BCSecs_.size(); ++iBCSec)
+        {
+            if(strcmp(BCSecs_[iBCSec].name,familyName)==0)
+            {
+                // printf("iBCSec: %d, familyName: %s\n", iBCSec, familyName);
+                BCSecs_[iBCSec].type = type;
+            }
+        }
+    }
 }
 
 } // end namespace HSF
-
-    // for (int iBlk = 0; iBlk < blockNum; ++iBlk)
-    // {
-    //     Array<Array<label> > tmpConnArr;
-    //     for (int iEle = 0; iEle < BCType.size(); ++iEle)
-    //     {
-    //         if((BCType_t)BCType[iEle]==BCSecs_[iBC].type)
-    //         {
-    //             Array<label> tmp;
-    //             for (int i = conn.startIdx[iEle]; i < conn.startIdx[iEle+1]; ++i)
-    //             {
-    //                 tmp.push_back(conn.data[i]);
-    //             }
-    //             tmpConnArr.push_back(tmp);
-    //             eleType = (ElementType_t)cellType[iEle];
-    //         }
-    //     }

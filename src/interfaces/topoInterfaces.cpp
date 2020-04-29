@@ -67,6 +67,29 @@ void init_(char* configFile)
 
 }
 
+void init_config_(char* configFile)
+{
+	para.setParaFile(configFile);
+}
+
+void init_mesh_(char* meshFile)
+{
+	Array<char*> mesh_file;
+	mesh_file.push_back(meshFile);
+	/// initialization before load balance
+	Region reg;
+	// regs.resize(1);
+	regs.push_back(reg);
+	REGION.initBeforeBalance(mesh_file);
+
+	/// load balance in region
+	LoadBalancer *lb = new LoadBalancer();
+	lb->LoadBalancer_3(regs);
+
+	/// initialization after load balance
+	REGION.initAfterBalance();
+}
+
 void clear_()
 {
 	regs.clear();
@@ -92,7 +115,8 @@ void get_inner_faces_num_(label* innFaceNum)
 
 void get_bnd_faces_num_(label* bndFaceNum)
 {
-	bndFaceNum[0] = REGION.getMesh().getTopology().getBndFacesNum();
+	bndFaceNum[0] = REGION.getBoundary().getTopology().getFacesNum();
+	// bndFaceNum[0] = REGION.getMesh().getTopology().getBndFacesNum();
 }
 
 

@@ -1,10 +1,10 @@
 /**
 * @file: nodes.hpp
 * @author: Liu Hongbin
-* @brief:
+* @brief: 
 * @date:   2019-09-09 15:08:19
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-27 15:33:57
+* @last Modified time: 2019-12-18 09:49:00
 */
 #ifndef NODES_HPP
 #define NODES_HPP
@@ -19,17 +19,17 @@ namespace HSF
 class Nodes
 {
 private:
-
+	
 	ArrayArray<scalar> xyz_; ///< AoS layout of coordinates
-
+	
 	Array<scalar> x_; ///< Coordinate X
-
+	
 	Array<scalar> y_; ///< Coordinate Y
-
+	
 	Array<scalar> z_; ///< Coordinate Z
-
+	
 	label start_; ///< the global start index of nodes
-
+	
 	label end_; ///< the global end index of nodes
 
 public:
@@ -43,14 +43,14 @@ public:
 	* @param[in] xyz AoS layout of coordinates
 	*/
 	Nodes(ArrayArray<scalar>& xyz);
-	/**
+	/** 
 	* @brief constructor
 	* @param[in] x Coordinate X
 	* @param[in] y Coordinate Y
 	* @param[in] z Coordinate Z
 	*/
 	Nodes(Array<scalar>& x, Array<scalar>& y, Array<scalar>& z);
-	/**
+	/** 
 	* @brief constructor
 	* @param[in] x Coordinate X
 	* @param[in] y Coordinate Y
@@ -74,6 +74,10 @@ public:
 	* @brief copy function
 	*/
 	void copy(Nodes* nodes);
+	/**
+	* @brief add function
+	*/
+	void add(Nodes* nodes);
 
 	/**
 	* @brief get X coordinates
@@ -96,28 +100,34 @@ public:
 	const ArrayArray<scalar>& getXYZ();
 
 	/**
+	* @brief get XYZ coordinates with index
+	* @param[in] idx node index
+	*/
+	const scalar* getXYZ(label idx);
+
+	/**
 	* @brief get the global start index of nodes
 	* @return global start index of nodes
 	*/
-	label getStart();
+	// label getStart();
 
 	/**
 	* @brief get the global end index of nodes
 	* @return global end index of nodes
 	*/
-	label getEnd();
+	// label getEnd();
 
 	/**
 	* @brief set the global start index of nodes
 	* @param[in] start global start index of nodes
 	*/
-	void setStart(const label start);
+	// void setStart(const label start);
 
 	/**
 	* @brief set the global end index of nodes
 	* @param[in] end global end index of nodes
 	*/
-	void setEnd(const label end);
+	// void setEnd(const label end);
 };
 
 } // end namespace HSF

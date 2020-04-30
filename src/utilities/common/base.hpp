@@ -78,6 +78,13 @@ typedef short int label16;
 #define EXIT exit(0)
 #define ERROR_EXIT exit(1)
 
+#define SOL_DIM 3
+
+#define CHAR_DIM 200
+
+#define forAll(i, length) for (label i = 0; i < length; ++i)
+
+
 }
 
 #endif //- Base_hpp

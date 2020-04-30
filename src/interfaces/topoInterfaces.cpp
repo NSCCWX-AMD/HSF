@@ -4,7 +4,7 @@
 * @brief: fortran function interfaces
 * @date:   2019-11-11 10:56:28
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-29 14:35:28
+* @last Modified time: 2020-01-07 10:31:19
 */
 #include <iostream>
 #include <fstream>
@@ -27,12 +27,12 @@ using namespace HSF;
 */
 /*****************************************************************************/
 
-void init_(char* configFile, int* length)
+void init_(char* configFile)
 {
 	LoadBalancer *lb = new LoadBalancer();
 	// std::cout<<"start initializing ......"<<std::endl;
 
-	para.setParaFile(configFile, *length);
+	para.setParaFile(configFile);
 
 	// printf("%s\n", configFile);
 
@@ -42,17 +42,22 @@ void init_(char* configFile, int* length)
 	// MPI_Comm_size(MPI_COMM_WORLD, &numproces);
 
 	int nPara = 4;
-	char meshFile[100];
+	// char meshFile[100];
+	Array<char*> mesh_file(10);
+	for (int i = 0; i < mesh_file.size(); ++i)
+	{
+		mesh_file[i] = new char[CHAR_DIM];
+	}
 	// para.getPara(&nPara, meshFile, "char*", "domain1", "region", "0", "path");
-	para.getPara<char>(&nPara, meshFile, "domain1", "region", "0", "path");
-	char resultFile[100];
-	para.getPara<char>(&nPara, resultFile, "domain1", "region", "0", "resPath");
+	para.getPara<char>(mesh_file, nPara, "domain1", "region", "0", "path");
+	char resultFile[CHAR_DIM];
+	para.getPara<char>(resultFile, nPara, "domain1", "region", "0", "resPath");
 
 	/// initialization before load balance
 	Region reg;
 	// regs.resize(1);
 	regs.push_back(reg);
-	REGION.initBeforeBalance(meshFile);
+	REGION.initBeforeBalance(mesh_file);
 
 	/// load balance in region
 	lb->LoadBalancer_3(regs);
@@ -60,7 +65,34 @@ void init_(char* configFile, int* length)
 	/// initialization after load balance
 	REGION.initAfterBalance();
 
-	// DELETE_POINTER(lb);
+}
+
+void init_config_(char* configFile)
+{
+	para.setParaFile(configFile);
+}
+
+void init_mesh_(char* meshFile)
+{
+	Array<char*> mesh_file;
+	mesh_file.push_back(meshFile);
+	/// initialization before load balance
+	Region reg;
+	// regs.resize(1);
+	regs.push_back(reg);
+	REGION.initBeforeBalance(mesh_file);
+
+	/// load balance in region
+	LoadBalancer *lb = new LoadBalancer();
+	lb->LoadBalancer_3(regs);
+
+	/// initialization after load balance
+	REGION.initAfterBalance();
+}
+
+void clear_()
+{
+	regs.clear();
 }
 
 void get_elements_num_(label* eleNum)
@@ -83,7 +115,8 @@ void get_inner_faces_num_(label* innFaceNum)
 
 void get_bnd_faces_num_(label* bndFaceNum)
 {
-	bndFaceNum[0] = REGION.getMesh().getTopology().getBndFacesNum();
+	bndFaceNum[0] = REGION.getBoundary().getTopology().getFacesNum();
+	// bndFaceNum[0] = REGION.getMesh().getTopology().getBndFacesNum();
 }
 
 

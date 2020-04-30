@@ -1,10 +1,10 @@
 /**
 * @file: test.cpp
 * @author: Liu Hongbin
-* @brief:
+* @brief: 
 * @date:   2019-10-09 11:04:42
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-26 17:23:58
+* @last Modified time: 2020-01-06 09:45:08
 */
 #include <iostream>
 #include <fstream>
@@ -27,11 +27,11 @@ using namespace HSF;
 
 // #define DEBUG_YAML
 
-// void loadRegionTopologyFromYAML(String filePtr, Array<scalar> &s,
-// 	ArrayArray<label> &nei, label procNum);
-// void operator >> (const YAML::Node& node, Array<scalar>& s);
-// void operator >> (const YAML::Node& node, Array<Array<label> >& nei);
-// void operator >> (const YAML::Node& node, Array<label>& regionIdx);
+// void loadRegionTopologyFromYAML(String filePtr, Array<Scalar> &s,
+// 	ArrayArray<Label> &nei, Label procNum);
+// void operator >> (const YAML::Node& node, Array<Scalar>& s);
+// void operator >> (const YAML::Node& node, Array<Array<Label> >& nei);
+// void operator >> (const YAML::Node& node, Array<Label>& regionIdx);
 // void hdf5ToAdf(char* filePtr, char* desFilePtr);
 
 int main(int argc, char** argv)
@@ -39,83 +39,62 @@ int main(int argc, char** argv)
 	LoadBalancer *lb = new LoadBalancer();
 	OUT<<"hello world!"<<ENDL;
 
-	Parameter para;
+	Parameter para("./config.yaml");
 
 	/// initialize MPI environment
 	printf("initialize MPI environment ......\n");
-	int numproces, rank;
-	MPI_Init(&argc, &argv);
-	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	MPI_Comm_size(MPI_COMM_WORLD, &numproces);
-	printf("This is process %d, %d processes are launched\n", rank, numproces);
+	// int numproces, rank;
+	// MPI_Init(&argc, &argv);
+	// MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	// MPI_Comm_size(MPI_COMM_WORLD, &numproces);
+	// printf("This is process %d, %d processes are launched\n", rank, numproces);
+	init_utility_();
 
-	// if(rank==0) std::cout<<"Solver: "<<para.getDomain("dom").getEquation("P").getSolver()<<std::endl;
-	// if(rank==0) std::cout<<"Path: "<<para.getDomain("dom").getRegion("region2").getPath()<<std::endl;
-	/// construct mesh block topology
-	// Array<scalar> s;
-	// ArrayArray<label> nei;
-	// // label procNum = 4;
-	// loadRegionTopologyFromYAML("regionTopo.yaml",s, nei, numproces);
+	int nPara = 4;
+	// char meshFile[100];
+	Array<char*> mesh_file(10);
+	for (int i = 0; i < mesh_file.size(); ++i)
+	{
+		mesh_file[i] = new char[100];
+	}
+	// para.getPara(&nPara, meshFile, "char*", "domain1", "region", "0", "path");
+	para.getPara<char>(mesh_file, nPara, "domain1", "region", "0", "path");
+	
+	printf("reading CGNS file: ");
+	for (int i = 0; i < mesh_file.size(); ++i)
+	{
+		printf("%s, ", mesh_file[i]);
+	}
+	printf("\n");
 
-	// LoadBalancer *lb = new LoadBalancer(s, nei, procNum);
-
-	// lb->LoadBalancer_2(s, nei, procNum);
-
-	/// evaluate the result of load balancer
-	// ArrayArray<label> procId = lb->getProcId();
-	// OUT<<"Item: region (processes ID)"<<ENDL;
-	// procId.display();
-	// ArrayArray<scalar> procLoad = lb->getProcLoad();
-	// OUT<<"Item: region (measurement)"<<ENDL;
-	// procLoad.display();
-	// scalar* procLoadSum = lb->getProcLoadSum();
-	// OUT<<"Item: process (measurement)"<<ENDL;
-	// for (int i = 0; i < procNum; ++i)
-	// {
-	// 	OUT<<"Item: "<<i<<" ("<<procLoadSum[i]<<")"<<ENDL;
-	// }
-	char* meshFile = "/home/export/online1/amd_dev1/liuhb/unstructured_frame/data/hexa_20.cgns";
-	char* resultFile = "/home/export/online1/amd_dev1/liuhb/unstructured_frame/data/hexa_result.cgns";
-
+	char resultFile[100];
+	nPara = 4;
+	para.getPara<char>(resultFile, nPara, "domain1", "region", "0", "resPath");
+	printf("writing CGNS file: %s\n", resultFile);
 	/// read CGNS file
-	Array<Region> regs(1);
-	regs[0].initBeforeBalance(meshFile);
+	Array<Region> regs;
+	Region reg;
+	regs.push_back(reg);
 
-	// /// only one region for test.
-	// Region reg;
-	// // reg.getMesh().readMesh("data/40W.cgns");
-	// // printf("writing HDF5 cgns file: ......\n");
-	// // reg.getMesh().writeMesh("data/hdf5.cgns");
-	// printf("reading HDF5 cgns file: ......\n");
-	// // reg.getMesh().initMesh("data/hdf5.cgns");
-	// // MPI_Barrier(MPI_COMM_WORLD);
-	// // reg.getMesh().readMesh("data/hdf5.cgns");
-	// reg.getMesh().readMesh("/home/export/online1/amd_dev1/liuhb/unstructured_frame/data/hdf5.cgns");
-	// MPI_Barrier(MPI_COMM_WORLD);
-	// // MPI_Barrier(MPI_COMM_WORLD);
+	regs[0].initBeforeBalance(mesh_file);
 
-	// regs.push_back(reg);
-
+	
 	/// load balance in region
 	lb->LoadBalancer_3(regs);
 
 	regs[0].initAfterBalance();
-	// regs[0].getMesh().getTopology().constructTopology();
-	// MPI_Barrier(MPI_COMM_WORLD);
 
-	// regs[0].getBoundary().readMesh("/home/export/online1/amd_dev1/liuhb/unstructured_frame/data/hdf5.cgns");
-	// Topology innerTopo = regs[0].getMesh().getTopology();
-	// regs[0].getBoundary().exchangeBoundaryElements(innerTopo);
-
-	// regs[0].getMesh().writeMesh(meshFile, parts);
 	regs[0].writeMesh(resultFile);
 
-	MPI_Finalize();
+	// regs[0].getMesh().initMesh(resultFile);
+
+	// MPI_Finalize();
+	
 	return 0;
 }
 
-// void loadRegionTopologyFromYAML(String filePtr, Array<scalar> &s,
-// 	ArrayArray<label> &nei, label procNum)
+// void loadRegionTopologyFromYAML(String filePtr, Array<Scalar> &s,
+// 	ArrayArray<Label> &nei, Label procNum)
 // {
 // 	OUT<<"reading YAML file: "<<filePtr<<" ......"<<ENDL;
 // 	std::ifstream fin(filePtr.c_str());
@@ -127,8 +106,8 @@ int main(int argc, char** argv)
 // 	{
 // 		measurement[i] >> s;
 // 	}
-// 	Array<Array<label> > neiTmp;
-// 	Array<label> regIdxTmp;
+// 	Array<Array<Label> > neiTmp;
+// 	Array<Label> regIdxTmp;
 // 	const YAML::Node& topology = doc["topology"];
 // 	for (int i = 0; i < topology.size(); ++i)
 // 	{
@@ -138,16 +117,16 @@ int main(int argc, char** argv)
 
 // 	/// transform the vector<vector<int> > to ArrayArray
 // 	nei.num = s.size();
-// 	nei.startIdx = new label[nei.num+1];
+// 	nei.startIdx = new Label[nei.num+1];
 // 	nei.startIdx[0] = 0;
 // 	for (int i = 0; i < nei.num; ++i)
 // 	{
 // 		nei.startIdx[i+1] = nei.startIdx[i]+neiTmp[regIdxTmp[i]].size();
 // 	}
-// 	nei.data = new label[nei.startIdx[nei.num]];
+// 	nei.data = new Label[nei.startIdx[nei.num]];
 // 	for (int i = 0; i < nei.num; ++i)
 // 	{
-// 		label k = 0;
+// 		Label k = 0;
 // 		for (int j = nei.startIdx[i]; j < nei.startIdx[i+1]; ++j)
 // 		{
 // 			nei.data[j] = neiTmp[regIdxTmp[i]][k];
@@ -167,7 +146,7 @@ int main(int argc, char** argv)
 // #endif
 // }
 
-// void operator >> (const YAML::Node& node, Array<scalar>& s)
+// void operator >> (const YAML::Node& node, Array<Scalar>& s)
 // {
 // 	String mea;
 // 	node["mea"] >> mea;
@@ -181,11 +160,11 @@ int main(int argc, char** argv)
 // #endif
 // }
 
-// void operator >> (const YAML::Node& node, Array<Array<label> >& nei)
+// void operator >> (const YAML::Node& node, Array<Array<Label> >& nei)
 // {
 // 	// String neighbor;
 // 	// node["neighbor"].as<string>() >> neighbor;
-// 	Array<label> neiTmp;
+// 	Array<Label> neiTmp;
 // 	int tmp;
 // 	const YAML::Node& neighbor = node["neighbor"];
 // 	for (int i = 0; i < neighbor.size(); ++i)
@@ -209,9 +188,9 @@ int main(int argc, char** argv)
 // #endif
 // }
 
-// void operator >> (const YAML::Node& node, Array<label>& regionIdx)
+// void operator >> (const YAML::Node& node, Array<Label>& regionIdx)
 // {
-// 	label tmp;
+// 	Label tmp;
 // 	node["regionIdx"] >> tmp;
 // 	regionIdx.push_back(tmp);
 

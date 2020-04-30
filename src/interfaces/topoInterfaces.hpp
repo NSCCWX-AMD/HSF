@@ -4,7 +4,7 @@
 * @brief: fortran function interfaces
 * @date:   2019-11-11 10:56:28
 * @last Modified by:   lenovo
-* @last Modified time: 2019-11-27 15:27:08
+* @last Modified time: 2019-12-18 08:31:53
 */
 #ifndef TOPOINTERFACES_HPP
 #define TOPOINTERFACES_HPP
@@ -22,9 +22,23 @@ extern "C"
 /**
 * @brief 初始化程序，包括参数、网格读入，负载均衡，拓扑与通信对创建等
 * @param[in]  configFile 参数文件
-* @param[in]  length 参数文件名有效字符串长度
 */
-void init_(char* configFile, int* length);
+void init_(char* configFile);
+
+/**
+* @brief 初始化配置文件
+* @param[in] configFile 参数配置文件
+*/
+void init_config_(char* configFile);
+
+/**
+* @brief 初始化网格信息
+* @param[in] meshFile 网格文件
+*/
+void init_mesh_(char* meshFile);
+
+
+void clear_();
 
 /**
 * @brief 获取网格单元数目
@@ -65,7 +79,7 @@ void get_ele_2_face_pos_(label* pos);
 
 /**
 * @brief 获取网格单元与网格面的拓扑关系
-* @param[out]  ele2Face 网格单元与网格面的映射关系，AoS格式存储
+* @param[out]  ele2Face 网格单元与网格面的映射关系，AoS格式存储 
 */
 void get_ele_2_face_(label* ele2Face);
 
@@ -77,7 +91,7 @@ void get_ele_2_ele_pos_(label* pos);
 
 /**
 * @brief 获取网格单元之间的拓扑关系，只存储内部单元
-* @param[out]  ele2Ele 网格单元之间的映射关系，AoS格式存储
+* @param[out]  ele2Ele 网格单元之间的映射关系，AoS格式存储 
 */
 void get_ele_2_ele_(label* ele2Ele);
 
@@ -89,7 +103,7 @@ void get_ele_2_node_pos_(label* pos);
 
 /**
 * @brief 获取网格单元与格点的拓扑关系
-* @param[out]  ele2Node 网格单元与格点的映射关系，AoS格式存储
+* @param[out]  ele2Node 网格单元与格点的映射关系，AoS格式存储 
 */
 void get_ele_2_node_(label* ele2Node);
 
@@ -101,7 +115,7 @@ void get_inn_face_2_node_pos_(label* pos);
 
 /**
 * @brief 获取内部网格面与格点的拓扑关系
-* @param[out]  innFace2Node 内部网格面与格点的映射关系，AoS格式存储
+* @param[out]  innFace2Node 内部网格面与格点的映射关系，AoS格式存储 
 */
 void get_inn_face_2_node_(label* innFace2Node);
 
@@ -113,7 +127,7 @@ void get_bnd_face_2_node_pos_(label* pos);
 
 /**
 * @brief 获取边界网格面与格点的拓扑关系
-* @param[out]  bndFace2Node 边界网格面与格点的映射关系，AoS格式存储
+* @param[out]  bndFace2Node 边界网格面与格点的映射关系，AoS格式存储 
 */
 void get_bnd_face_2_node_(label* bndFace2Node);
 
@@ -137,7 +151,7 @@ void get_bnd_face_2_ele_pos_(label* pos);
 
 /**
 * @brief 获取边界网格面与网格单元的拓扑关系
-* @param[out]  bndFace2Ele 边界网格面与网格单元的映射关系，AoS格式存储
+* @param[out]  bndFace2Ele 边界网格面与网格单元的映射关系，AoS格式存储 
 */
 void get_bnd_face_2_ele_(label* bndFace2Ele);
 

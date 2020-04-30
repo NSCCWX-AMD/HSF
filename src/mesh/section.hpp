@@ -2,13 +2,16 @@
 * @file: section.hpp
 * @author: Liu Hongbin
 * @Date:   2019-10-14 10:05:10
-* @Last Modified by:   Hanfeng
-* @Last Modified time: 2019-12-02 13:46:39
+* @Last Modified by:   lenovo
+* @Last Modified time: 2019-10-14 14:14:36
 */
 #ifndef SECTION_H
 #define SECTION_H
 #include "cgnslib.h"
 #include "utilities.hpp"
+
+#define Inner 0
+#define Boco 1
 
 namespace HSF
 {
@@ -20,13 +23,15 @@ class Section
 {
 public:
 	char*  name; ///< section name
-
+	
 	ElementType_t  type; ///< element type of the section
 
+	label iZone; ///< zone idx of the section
+	
 	label  iStart; ///< global start index of the section
-
+	
 	label  iEnd; ///< global end index of the section
-
+	
 	label  num; ///< count of elements of the section
 
 	label  nBnd;
@@ -67,17 +72,43 @@ public:
 	*/
 	static Array<label> edgeNodesForEle(label* conn, const label eleType, const label idx);
 	/**
-	* @brief whether the section belongs to the entity through the elements type
+	* @brief whether the section belongs to the entity through the elements type 
 	* @param[in] secType section type
 	* @param[in] meshType_ mesh type
 	* @return whether the section belongs to the entity
 	*/
 	static bool compareEleType(const label secType, const label meshType_);
+
+	/**
+	* @brief translate the element type to string
+	*/
+	static char* typeToWord(ElementType_t eleType);
+
+	/**
+	* @brief translate the element type to string
+	*/
+	static char* GridLocationToWord(GridLocation_t location);
+
+	/**
+	* @brief translate the element type to string
+	*/
+	static char* PtSetToWord(PointSetType_t ptsetType);
+
+	/**
+	* @brief translate the element type to string
+	*/
+	static char* ConnTypeToWord(GridConnectivityType_t connType);
+
+	/**
+	* @brief get the type of element based on node count
+	*/
+	static label getFaceType(int nodeNum);
 };
 
-struct BCSection
+class BCSection
 {
-	char name[40]; ///< section name
+public:
+	char name[CHAR_DIM]; ///< section name
 
 	BCType_t type; ///< boundary condition type
 
@@ -88,6 +119,18 @@ struct BCSection
 	PointSetType_t ptsetType[1]; ///< the type of set of boundary elements
 
 	cgsize_t* BCElems; ///< list or range of boundary elements
+
+	label64 zoneStart; ///< start index of the first boundary element
+
+	/**
+	* @brief translate the boundary condition type to string
+	*/
+	static char* typeToWord(BCType_t BCType);
+
+	/**
+	* @brief find the BC type of specific element
+	*/
+	bool findBCType(label eleID);
 };
 
 } // end namespace HSF
